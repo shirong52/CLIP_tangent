@@ -17,6 +17,16 @@ append_factors.py
       --n_train 2000 \
       --n_test  500 \
       --seed 100
+
+用法（重新生成 color 因素，使其包含 ground_color）：
+  python append_factors.py \
+      --out_dir /root/autodl-tmp/dataset/composition/controlled_pairs \
+      --blender /root/autodl-tmp/blender-3.6.9-linux-x64/blender \
+      --factors color \
+      --n_train 2000 \
+      --n_test  500 \
+      --seed 200 \
+      --replace
 """
 
 import argparse
@@ -37,6 +47,7 @@ from build_controlled_dataset import (
     TRAIN_GROUND_COLORS, TEST_GROUND_COLORS,
     TRAIN_WALL_COLORS, TEST_WALL_COLORS,
     generate_ground_color_pair, generate_wall_color_pair,
+    generate_color_pair, generate_anchor_color_pair,
 )
 
 
@@ -110,10 +121,33 @@ def render_scene(scene_spec: dict, out_path: str,
 # 核心追加逻辑
 # ──────────────────────────────────────────────
 
+def _strip_factors(jsonl_path: Path, factors_to_remove: set):
+    """Remove all records whose 'factor' field is in factors_to_remove."""
+    if not jsonl_path.exists():
+        return
+    kept = []
+    with open(jsonl_path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                rec = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if rec.get("factor") not in factors_to_remove:
+                kept.append(line)
+    with open(jsonl_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(kept))
+        if kept:
+            f.write("\n")
+
+
 def append_split(split: str, factors: list, n_per_factor: int,
                  rng: random.Random, out_dir: Path,
                  blender_bin: str, render_script: str,
-                 dry_run: bool = False) -> list[dict]:
+                 dry_run: bool = False,
+                 replace: bool = False) -> list[dict]:
 
     jsonl_path = out_dir / f"{split}.jsonl"
     img_dir    = out_dir / "images" / split
@@ -121,10 +155,19 @@ def append_split(split: str, factors: list, n_per_factor: int,
 
     # 检查已有因素，防止重复追加
     existing = get_existing_factors(jsonl_path)
-    to_add   = [f for f in factors if f not in existing]
-    skipped  = [f for f in factors if f in existing]
-    if skipped:
-        print(f"  ⚠ [{split}] 以下因素已存在，跳过: {skipped}")
+    if replace:
+        # --replace 模式：先从 JSONL 中删除同名因素的旧记录
+        to_remove = [f for f in factors if f in existing]
+        if to_remove:
+            print(f"  [{split}] --replace 模式：删除旧记录 {to_remove} ...")
+            _strip_factors(jsonl_path, set(to_remove))
+            existing -= set(to_remove)
+        to_add = factors
+    else:
+        to_add   = [f for f in factors if f not in existing]
+        skipped  = [f for f in factors if f in existing]
+        if skipped:
+            print(f"  ⚠ [{split}] 以下因素已存在，跳过: {skipped}")
     if not to_add:
         print(f"  [{split}] 所有指定因素已存在，无需追加。")
         return []
@@ -146,9 +189,17 @@ def append_split(split: str, factors: list, n_per_factor: int,
     def gen_wall(rng, cp, bp):
         return generate_wall_color_pair(rng, cp, bp, wall_color_pool=wall_pool)
 
+    def gen_color(rng, cp, bp):
+        # 等概率混合 ref_color 和 anchor_color 两种变体，与原始数据集比例一致
+        if rng.random() < 0.5:
+            return generate_color_pair(rng, cp, bp, ground_color_pool=ground_pool)
+        else:
+            return generate_anchor_color_pair(rng, cp, bp, ground_color_pool=ground_pool)
+
     new_generators = {
         "ground_color": gen_ground,
         "wall_color":   gen_wall,
+        "color":        gen_color,
     }
 
     new_records = []
@@ -273,6 +324,8 @@ def main():
     parser.add_argument("--seed",     type=int, default=100,
                         help="建议用与原始生成不同的 seed，避免重复样本")
     parser.add_argument("--dry_run",  action="store_true")
+    parser.add_argument("--replace",  action="store_true",
+                        help="允许删除已有同名因素记录后重新生成（用于修正已有因素）")
     args = parser.parse_args()
 
     rng         = random.Random(args.seed)
@@ -299,6 +352,7 @@ def main():
             blender_bin   = args.blender,
             render_script = render_script,
             dry_run       = args.dry_run,
+            replace       = args.replace,
         )
 
     update_stats(out_dir)

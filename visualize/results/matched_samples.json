@@ -1,0 +1,117 @@
+[
+  {
+    "scene_key": "cone|cube|right|white|floor=gray",
+    "anchor_image": "images/train/train_ground_color_08000_orig.png",
+    "anchor_caption": "a red cone to the right of a green cube on a white surface with a gray floor",
+    "floor_pert_image": "images/train/train_ground_color_08000_pert.png",
+    "floor_pert_caption": "a red cone to the right of a green cube on a white surface with a green floor",
+    "floor_change": "gray->green",
+    "obj_color_pert_image": "images/train/train_ground_color_08042_orig.png",
+    "obj_color_pert_caption": "a blue cone to the right of a green cube on a white surface with a gray floor",
+    "obj_color_change": "anchor red->blue, ref green->green",
+    "meta": {
+      "anchor_shape": "cone",
+      "ref_shape": "cube",
+      "relation": "right",
+      "background": "white",
+      "floor_orig": "gray",
+      "floor_pert": "green",
+      "A_anchor_color": "red",
+      "A_ref_color": "green",
+      "B_anchor_color": "blue",
+      "B_ref_color": "green"
+    }
+  },
+  {
+    "scene_key": "cone|cube|left|gray|floor=gray",
+    "anchor_image": "images/train/train_ground_color_08001_orig.png",
+    "anchor_caption": "a blue cone to the left of a red cube on a gray surface with a gray floor",
+    "floor_pert_image": "images/train/train_ground_color_08001_pert.png",
+    "floor_pert_caption": "a blue cone to the left of a red cube on a gray surface with a beige floor",
+    "floor_change": "gray->beige",
+    "obj_color_pert_image": "images/train/train_ground_color_09134_orig.png",
+    "obj_color_pert_caption": "a blue cone to the left of a green cube on a gray surface with a gray floor",
+    "obj_color_change": "anchor blue->blue, ref red->green",
+    "meta": {
+      "anchor_shape": "cone",
+      "ref_shape": "cube",
+      "relation": "left",
+      "background": "gray",
+      "floor_orig": "gray",
+      "floor_pert": "beige",
+      "A_anchor_color": "blue",
+      "A_ref_color": "red",
+      "B_anchor_color": "blue",
+      "B_ref_color": "green"
+    }
+  },
+  {
+    "scene_key": "cube|sphere|right|gray|floor=gray",
+    "anchor_image": "images/train/train_ground_color_08002_orig.png",
+    "anchor_caption": "a red cube to the right of a yellow sphere on a gray surface with a gray floor",
+    "floor_pert_image": "images/train/train_ground_color_08002_pert.png",
+    "floor_pert_caption": "a red cube to the right of a yellow sphere on a gray surface with a brown floor",
+    "floor_change": "gray->brown",
+    "obj_color_pert_image": "images/train/train_ground_color_08290_orig.png",
+    "obj_color_pert_caption": "a red cube to the right of a blue sphere on a gray surface with a gray floor",
+    "obj_color_change": "anchor red->red, ref yellow->blue",
+    "meta": {
+      "anchor_shape": "cube",
+      "ref_shape": "sphere",
+      "relation": "right",
+      "background": "gray",
+      "floor_orig": "gray",
+      "floor_pert": "brown",
+      "A_anchor_color": "red",
+      "A_ref_color": "yellow",
+      "B_anchor_color": "red",
+      "B_ref_color": "blue"
+    }
+  },
+  {
+    "scene_key": "cube|cylinder|right|white|floor=beige",
+    "anchor_image": "images/train/train_ground_color_08003_orig.png",
+    "anchor_caption": "a yellow cube to the right of a green cylinder on a white surface with a beige floor",
+    "floor_pert_image": "images/train/train_ground_color_08003_pert.png",
+    "floor_pert_caption": "a yellow cube to the right of a green cylinder on a white surface with a green floor",
+    "floor_change": "beige->green",
+    "obj_color_pert_image": "images/train/train_ground_color_08062_orig.png",
+    "obj_color_pert_caption": "a yellow cube to the right of a red cylinder on a white surface with a beige floor",
+    "obj_color_change": "anchor yellow->yellow, ref green->red",
+    "meta": {
+      "anchor_shape": "cube",
+      "ref_shape": "cylinder",
+      "relation": "right",
+      "background": "white",
+      "floor_orig": "beige",
+      "floor_pert": "green",
+      "A_anchor_color": "yellow",
+      "A_ref_color": "green",
+      "B_anchor_color": "yellow",
+      "B_ref_color": "red"
+    }
+  },
+  {
+    "scene_key": "cylinder|cone|left|gray|floor=gray",
+    "anchor_image": "images/train/train_ground_color_08004_orig.png",
+    "anchor_caption": "a blue cylinder to the left of a green cone on a gray surface with a gray floor",
+    "floor_pert_image": "images/train/train_ground_color_08004_pert.png",
+    "floor_pert_caption": "a blue cylinder to the left of a green cone on a gray surface with a green floor",
+    "floor_change": "gray->green",
+    "obj_color_pert_image": "images/train/train_ground_color_09407_orig.png",
+    "obj_color_pert_caption": "a blue cylinder to the left of a yellow cone on a gray surface with a gray floor",
+    "obj_color_change": "anchor blue->blue, ref green->yellow",
+    "meta": {
+      "anchor_shape": "cylinder",
+      "ref_shape": "cone",
+      "relation": "left",
+      "background": "gray",
+      "floor_orig": "gray",
+      "floor_pert": "green",
+      "A_anchor_color": "blue",
+      "A_ref_color": "green",
+      "B_anchor_color": "blue",
+      "B_ref_color": "yellow"
+    }
+  }
+]

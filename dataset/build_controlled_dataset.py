@@ -56,12 +56,14 @@ RELATIONS   = ["left", "right", "near", "far"]
 BACKGROUNDS = ["gray", "white", "beige", "dark"]
 
 # left/right：ref 沿 x 轴偏移，anchor 固定在原点
+# 语义：relation="left" 表示 anchor 在 ref 左边，即 anchor.x < ref.x
+#       所以 ref.x 应该是正值，让 ref 在右边，anchor 在左边
 # near/far：  ref 与 anchor 位置相同（同一点），通过 size 编码距离感
 RELATION_TO_OFFSET = {
-    "left":  (-2.5, 0.0),
-    "right": ( 2.5, 0.0),
-    "near":  ( 1.5, 0.0),   # 略偏右避免完全重叠，size 会更大
-    "far":   ( 1.5, 0.0),   # 位置相同，size 更小
+    "left":  ( 1.5, 0.0),   # ref 在右边，anchor 在左边
+    "right": (-1.5, 0.0),    # ref 在左边，anchor 在右边
+    "near":  ( 1.0, 0.0),   # 略偏右避免完全重叠，size 会更大
+    "far":   ( 1.0, 0.0),   # 位置相同，size 更小
 }
 
 # near/far 对应的 ref 对象尺寸（通过大小模拟远近感）
@@ -216,10 +218,15 @@ def generate_relation_pair(rng, color_pool, bg_pool) -> dict:
     }
 
 
-def generate_color_pair(rng, color_pool, bg_pool) -> dict:
+def generate_color_pair(rng, color_pool, bg_pool,
+                        ground_color_pool=None) -> dict:
     """
     颜色扰动对：只改变 ref 对象的颜色，其余完全相同。
     背景关系固定用 left/right，避免 near/far 的 size 变化干扰颜色因素。
+
+    为保证与 ground_color 因素的场景结构一致（均含地面），
+    此处也为两个场景随机分配一个 **固定** ground_color（orig/pert 相同）。
+    如此一来，"物体颜色变化" vs "地面颜色变化" 的比较在图像结构上完全对等。
     """
     anchor_color  = rng.choice(color_pool)
     anchor_shape  = rng.choice(SHAPES)
@@ -227,6 +234,10 @@ def generate_color_pair(rng, color_pool, bg_pool) -> dict:
     background    = rng.choice(bg_pool)
     relation      = rng.choice(["left", "right"])   # 固定用位置关系
     azimuth       = rng.uniform(30, 60)
+
+    # 地面颜色：固定（orig 和 pert 相同），只保证场景有地面
+    gpool         = ground_color_pool or TRAIN_GROUND_COLORS
+    ground_fixed  = rng.choice(gpool)
 
     # 原始颜色和扰动颜色从 color_pool 中选，确保不同
     # 需要至少3种颜色：anchor色、ref原始色、ref扰动色各不相同
@@ -242,26 +253,30 @@ def generate_color_pair(rng, color_pool, bg_pool) -> dict:
     spec_orig = build_scene_spec(anchor_color, anchor_shape,
                                   ref_color_orig, ref_shape,
                                   relation, background,
-                                  camera_azimuth=azimuth)
+                                  camera_azimuth=azimuth,
+                                  ground_color=ground_fixed)
     spec_pert = build_scene_spec(anchor_color, anchor_shape,
                                   ref_color_pert, ref_shape,   # 只改 ref 颜色
                                   relation, background,
-                                  camera_azimuth=azimuth)
+                                  camera_azimuth=azimuth,
+                                  ground_color=ground_fixed)   # 地面不变
     return {
         "factor":        "color",
         "changed_field": "ref_color",
         "original_val":  ref_color_orig,
         "perturbed_val": ref_color_pert,
         "caption":       make_caption(anchor_color, anchor_shape,
-                                       relation, ref_color_orig, ref_shape, background),
+                                       relation, ref_color_orig, ref_shape, background,
+                                       ground_color=ground_fixed),
         "caption_plus":  make_caption(anchor_color, anchor_shape,
-                                       relation, ref_color_pert, ref_shape, background),
+                                       relation, ref_color_pert, ref_shape, background,
+                                       ground_color=ground_fixed),
         "scene_orig":    spec_orig,
         "scene_pert":    spec_pert,
         "meta": {
             "anchor_color": anchor_color, "anchor_shape": anchor_shape,
             "ref_shape":    ref_shape,    "relation":     relation,
-            "background":   background,
+            "background":   background,   "ground_color": ground_fixed,
         }
     }
 
@@ -308,9 +323,13 @@ def generate_shape_pair(rng, color_pool, bg_pool) -> dict:
     }
 
 
-def generate_anchor_color_pair(rng, color_pool, bg_pool) -> dict:
+def generate_anchor_color_pair(rng, color_pool, bg_pool,
+                               ground_color_pool=None) -> dict:
     """
     anchor 颜色扰动对：只改变 anchor 对象的颜色。
+
+    与 generate_color_pair 相同，为保证与 ground_color 因素的场景结构一致，
+    此处也为两个场景随机分配一个固定的 ground_color（orig/pert 相同）。
     """
     anchor_shape  = rng.choice(SHAPES)
     ref_color     = rng.choice(color_pool)
@@ -318,6 +337,10 @@ def generate_anchor_color_pair(rng, color_pool, bg_pool) -> dict:
     background    = rng.choice(bg_pool)
     relation      = rng.choice(["left", "right"])
     azimuth       = rng.uniform(30, 60)
+
+    # 地面颜色：固定（orig 和 pert 相同）
+    gpool         = ground_color_pool or TRAIN_GROUND_COLORS
+    ground_fixed  = rng.choice(gpool)
 
     if len(color_pool) < 3:
         raise ValueError(
@@ -330,26 +353,30 @@ def generate_anchor_color_pair(rng, color_pool, bg_pool) -> dict:
     spec_orig = build_scene_spec(anchor_color_orig, anchor_shape,
                                   ref_color, ref_shape,
                                   relation, background,
-                                  camera_azimuth=azimuth)
+                                  camera_azimuth=azimuth,
+                                  ground_color=ground_fixed)
     spec_pert = build_scene_spec(anchor_color_pert, anchor_shape,
                                   ref_color, ref_shape,
                                   relation, background,
-                                  camera_azimuth=azimuth)
+                                  camera_azimuth=azimuth,
+                                  ground_color=ground_fixed)   # 地面不变
     return {
         "factor":        "color",
         "changed_field": "anchor_color",
         "original_val":  anchor_color_orig,
         "perturbed_val": anchor_color_pert,
         "caption":       make_caption(anchor_color_orig, anchor_shape,
-                                       relation, ref_color, ref_shape, background),
+                                       relation, ref_color, ref_shape, background,
+                                       ground_color=ground_fixed),
         "caption_plus":  make_caption(anchor_color_pert, anchor_shape,
-                                       relation, ref_color, ref_shape, background),
+                                       relation, ref_color, ref_shape, background,
+                                       ground_color=ground_fixed),
         "scene_orig":    spec_orig,
         "scene_pert":    spec_pert,
         "meta": {
             "anchor_shape": anchor_shape, "ref_color":  ref_color,
             "ref_shape":    ref_shape,    "relation":   relation,
-            "background":   background,
+            "background":   background,   "ground_color": ground_fixed,
         }
     }
 
